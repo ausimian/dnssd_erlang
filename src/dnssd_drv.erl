@@ -284,10 +284,10 @@ handle_info({Port, browse, {Flags, _IfIndex, Name, Type, Domain}},
 		   false -> remove_result(Result, State)
 	       end,
     {noreply, NewState};
-handle_info({DrvPort, resolve, {_Flags, _IfIndex, _Fullname, Host, Port, Txt}},
+handle_info({DrvPort, resolve, {_Flags, IfIndex, _Fullname, Host, Port, Txt}},
 	    #state{notify = Notify, port = DrvPort} = State) ->
     TxtStrings = decode_txt(Txt),
-    Result = {Host, Port, TxtStrings},
+    Result = {Host, Port, TxtStrings, IfIndex},
     NewResults = [Result],
     case State#state.results of
 	NewResults ->
