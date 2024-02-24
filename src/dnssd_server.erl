@@ -25,7 +25,7 @@
 %% API
 -export([start_link/0]).
 
--export([stop/1, enumerate/1, browse/2, resolve/3, register/6, query_record/2, results/1]).
+-export([stop/1, enumerate/1, browse/3, resolve/4, register/6, query_record/3, results/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -66,8 +66,8 @@ enumerate(Type) when Type =:= reg orelse Type =:= browse ->
 %% @spec browse(Type, Domain) -> {ok, Ref, Results} | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-browse(Type, Domain) when is_binary(Type) andalso is_binary(Domain) ->
-    gen_server:call(?SERVER, {start, {browse, Type, Domain}}).
+browse(Type, Domain, IfIndex) when is_binary(Type) andalso is_binary(Domain) andalso is_integer(IfIndex) ->
+    gen_server:call(?SERVER, {start, {browse, Type, Domain, IfIndex}}).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -75,9 +75,9 @@ browse(Type, Domain) when is_binary(Type) andalso is_binary(Domain) ->
 %% @spec resolve(Name, Type, Domain) -> {ok, Ref, Results} | {error, Error}
 %% @end
 %%--------------------------------------------------------------------
-resolve(Name, Type, Domain)
-  when is_binary(Name) andalso is_binary(Type) andalso is_binary(Domain) ->
-    gen_server:call(?SERVER, {start, {resolve, Name, Type, Domain}}).
+resolve(Name, Type, Domain, IfIndex)
+  when is_binary(Name) andalso is_binary(Type) andalso is_binary(Domain) andalso is_integer(IfIndex) ->
+    gen_server:call(?SERVER, {start, {resolve, Name, Type, Domain, IfIndex}}).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -97,8 +97,8 @@ when is_binary(Name), is_binary(Type), is_binary(Domain), is_binary(Host),
 %% @doc Query for a specific DNS record type
 %% @end
 %%--------------------------------------------------------------------
-query_record(Domain, RType) ->
-    Req = {start, {query_record, Domain, RType}},
+query_record(Domain, RType, IfIndex) ->
+    Req = {start, {query_record, Domain, RType, IfIndex}},
     gen_server:call(?SERVER, Req).
 
 results(Ref) when is_reference(Ref) ->

@@ -179,14 +179,14 @@ init({Pid, Arg}) when is_pid(Pid) andalso is_tuple(Arg) ->
 	       {enumerate, Type}
 		 when Type =:= browse orelse Type =:= reg ->
 		   drv_enumerate(DrvPort, Type);
-	       {browse, Type, Domain} ->
-		   drv_browse(DrvPort, Type, Domain);
-	       {resolve, Name, Type, Domain} ->
-		   drv_resolve(DrvPort, Name, Type, Domain);
+	       {browse, Type, Domain, IfIndex} ->
+		   drv_browse(DrvPort, Type, Domain, IfIndex);
+	       {resolve, Name, Type, Domain, IfIndex} ->
+		   drv_resolve(DrvPort, Name, Type, Domain, IfIndex);
 	       {register, Name, Type, Domain, Host, Port, Txt} ->
 		   drv_register(DrvPort, Name, Type, Domain, Host, Port, Txt);
-	       {query_record, Domain, RType} ->
-		   drv_query_record(DrvPort, Domain, RType);
+	       {query_record, Domain, RType, IfIndex} ->
+		   drv_query_record(DrvPort, Domain, RType, IfIndex);
 	       _ ->
 		   {error, bad_op}
 	   end,
@@ -412,13 +412,13 @@ drv_enumerate(Port, Type)
   when is_port(Port), (Type =:= browse orelse Type =:= reg) ->
     erlang:port_call(Port, ?DRV_CMD_ENUM, Type).
 
-drv_browse(Port, Type, Domain)
-  when is_port(Port), is_binary(Type), is_binary(Domain) ->
-    erlang:port_call(Port, ?DRV_CMD_BROWSE, {Type, Domain}).
+drv_browse(Port, Type, Domain, IfIndex)
+  when is_port(Port), is_binary(Type), is_binary(Domain), is_integer(IfIndex) ->
+    erlang:port_call(Port, ?DRV_CMD_BROWSE, {Type, Domain, IfIndex}).
 
-drv_resolve(Port, Name, Type, Domain)
-  when is_port(Port), is_binary(Name), is_binary(Type), is_binary(Domain) ->
-    erlang:port_call(Port, ?DRV_CMD_RESOLVE, {Name, Type, Domain}).
+drv_resolve(Port, Name, Type, Domain, IfIndex)
+  when is_port(Port), is_binary(Name), is_binary(Type), is_binary(Domain), is_integer(IfIndex) ->
+    erlang:port_call(Port, ?DRV_CMD_RESOLVE, {Name, Type, Domain, IfIndex}).
 
 drv_register(ErlPort, Name, Type, Domain, Host, Port, Txt)
   when is_port(ErlPort), is_binary(Name), is_binary(Type), is_binary(Domain),
@@ -426,9 +426,9 @@ drv_register(ErlPort, Name, Type, Domain, Host, Port, Txt)
     Data = {Name, Type, Domain, Host, Port, Txt},
     erlang:port_call(ErlPort, ?DRV_CMD_REGISTER, Data).
 
-drv_query_record(ErlPort, Domain, RType)
-  when is_port(ErlPort), is_binary(Domain), is_binary(RType) ->
-    Data = {Domain, service_type_code(RType)},
+drv_query_record(ErlPort, Domain, RType, IfIndex)
+  when is_port(ErlPort), is_binary(Domain), is_binary(RType), is_integer(IfIndex) ->
+    Data = {Domain, service_type_code(RType), IfIndex},
     erlang:port_call(ErlPort, ?DRV_CMD_QUERY_RECORD, Data).
 
 %% Misc

@@ -39,10 +39,10 @@
 -export([start/0, stop/0, stop/1]).
 -export([results/1]).
 -export([enumerate/1]).
--export([browse/1, browse/2]).
--export([resolve/3, resolve_sync/3, resolve_sync/4]).
+-export([browse/1, browse/2, browse/3]).
+-export([resolve/3, resolve/4, resolve_sync/3, resolve_sync/4]).
 -export([register/2, register/3, register/4, register/6]).
--export([query_record/2]).
+-export([query_record/2, query_record/3]).
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
@@ -108,28 +108,46 @@ browse(Type) -> browse(Type, <<>>).
 %% @doc Browse for services. If domain is empty, browse all domains.
 -spec browse(type(), domain()) -> {ok, op_ref()} | {error, _}.
 browse(Type, Domain) when is_binary(Type), is_binary(Domain) ->
+    browse(Type, Domain, 0);
+browse(Type, Domain) when ?IS_LIST_OR_BIN(Type), ?IS_LIST_OR_BIN(Domain) ->
+    browse(iolist_to_binary(Type), iolist_to_binary(Domain)).
+
+-spec browse(type(), domain(), non_neg_integer()) -> {ok, op_ref()} | {error, _}.
+browse(Type, Domain, IfIndex) when is_binary(Type), is_binary(Domain), is_integer(IfIndex) ->
     case ensure_safe_type(Type) of
 	Error when is_tuple(Error) -> Error;
 	SafeType ->
-	    dnssd_server:browse(SafeType, Domain)
+	    dnssd_server:browse(SafeType, Domain, IfIndex)
     end;
-browse(Type, Domain) when ?IS_LIST_OR_BIN(Type), ?IS_LIST_OR_BIN(Domain) ->
-    browse(iolist_to_binary(Type), iolist_to_binary(Domain)).
+browse(Type, Domain, IfIndex) when ?IS_LIST_OR_BIN(Type), ?IS_LIST_OR_BIN(Domain) ->
+    browse(iolist_to_binary(Type), iolist_to_binary(Domain), IfIndex).
 
 %% @doc Resolve a service instance.
 -spec resolve(name(), type(), domain()) -> {ok, op_ref()} | {error, _}.
 resolve(Name, Type, Domain)
   when is_binary(Name), is_binary(Type), is_binary(Domain) ->
-    case ensure_safe_type(Type) of
-	Error when is_tuple(Error) -> Error;
-	SafeType ->
-	    dnssd_server:resolve(Name, SafeType, Domain)
-    end;
+    resolve(Name, Type, Domain, 0);
 resolve(Name, Type, Domain)
   when ?IS_LIST_OR_BIN(Name), ?IS_LIST_OR_BIN(Type), ?IS_LIST_OR_BIN(Domain) ->
     resolve(iolist_to_binary(Name),
 	    iolist_to_binary(Type),
 	    iolist_to_binary(Domain)).
+
+%% @doc Resolve a service instance.
+-spec resolve(name(), type(), domain(), non_neg_integer()) -> {ok, op_ref()} | {error, _}.
+resolve(Name, Type, Domain, IfIndex)
+  when is_binary(Name), is_binary(Type), is_binary(Domain), is_integer(IfIndex) ->
+    case ensure_safe_type(Type) of
+	Error when is_tuple(Error) -> Error;
+	SafeType ->
+	    dnssd_server:resolve(Name, SafeType, Domain, IfIndex)
+    end;
+resolve(Name, Type, Domain, IfIndex)
+  when ?IS_LIST_OR_BIN(Name), ?IS_LIST_OR_BIN(Type), ?IS_LIST_OR_BIN(Domain) ->
+    resolve(iolist_to_binary(Name),
+	    iolist_to_binary(Type),
+	    iolist_to_binary(Domain),
+        IfIndex).
 
 %% @equiv resolve_sync(Name, Type, Domain, 5000)
 -spec resolve_sync(name(), type(), domain()) ->
@@ -249,14 +267,22 @@ register(Name, Type, Port, Txt, Host, Domain)
 -spec query_record(domain(), rtype()) -> {ok, op_ref()} | {error, _}.
 query_record(Domain, RType)
   when is_binary(Domain), is_binary(RType) ->
+    query_record(Domain, RType, 0);
+query_record(Domain, RType)
+  when ?IS_LIST_OR_BIN(Domain), ?IS_LIST_OR_BIN(RType) ->
+    query_record(iolist_to_binary(Domain), iolist_to_binary(Domain)).
+
+-spec query_record(domain(), rtype(), non_neg_integer()) -> {ok, op_ref()} | {error, _}.
+query_record(Domain, RType, IfIndex)
+  when is_binary(Domain), is_binary(RType), is_integer(IfIndex) ->
     case ensure_safe_rtype(RType) of
 	{error, _} = Err -> Err;
-	_ -> dnssd_server:query_record(Domain, RType)
+	_ -> dnssd_server:query_record(Domain, RType, IfIndex)
     end;
-query_record(Domain, RType)
+query_record(Domain, RType, IfIndex)
   when ?IS_LIST_OR_BIN(Domain),
        ?IS_LIST_OR_BIN(RType) ->
-    query_record(iolist_to_binary(Domain), iolist_to_binary(Domain)).
+    query_record(iolist_to_binary(Domain), iolist_to_binary(Domain), IfIndex).
 
 -ifdef(AVAHI).
 ensure_safe_name(<<>>) ->
